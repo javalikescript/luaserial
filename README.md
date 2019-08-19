@@ -1,8 +1,6 @@
-serial for luajls
+The Lua serial module provides functions to deal with serial port settings such as bit rates (speed) data bits, parity.
 
-this lua module provides functions to deal with serial port settings such as bit rates (speed) data bits, parity.
-
-the device/file manipulation such as open, close, read and write are not provided.
+The device/file manipulation such as open, close, read and write are not provided.
 
 ```lua
 local serialLib = require('serial')
@@ -18,3 +16,5 @@ serialLib.setSerial(fd, baudRate, dataBits, stopBits, parity)
 fd:read(1)
 fd:close()
 ```
+
+Lua serial is covered by the MIT license.
