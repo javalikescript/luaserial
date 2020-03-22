@@ -1,5 +1,3 @@
-#include "luamod.h"
-
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
@@ -7,8 +5,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <termios.h>
-
-#include "luaserial_base.c"
 
 static int getSerial(lua_State *l) {
 	int fd;

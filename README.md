@@ -2,6 +2,8 @@ The Lua serial module provides functions to deal with serial port settings such 
 
 The device/file manipulation such as open, close, read and write are not provided.
 
+This module is part of the [luaclibs](https://github.com/javalikescript/luaclibs) project, the binaries can be found on the [luajls](http://javalikescript.free.fr/lua/) page.
+
 ```lua
 local serialLib = require('serial')
 local baudRate = 9600
