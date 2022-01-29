@@ -259,11 +259,16 @@ static int setTimeout(lua_State *l) {
 
 static int flush(lua_State *l) {
 	int fd;
+	HANDLE hFile;
 	fd = getFileDesc(l, 1);
-	if (!FlushFileBuffers(fd)) {
+	hFile = (HANDLE)_get_osfhandle(fd);
+	if (hFile == INVALID_HANDLE_VALUE) {
 		RETURN_ERROR(l, last_error())
 	}
-	if (!PurgeComm(fd, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR)) {
+	if (!FlushFileBuffers(hFile)) {
+		RETURN_ERROR(l, last_error())
+	}
+	if (!PurgeComm(hFile, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR)) {
 		RETURN_ERROR(l, last_error())
 	}
 	RETURN_SUCCESS(l)
@@ -278,19 +283,22 @@ static int waitDataAvailable(lua_State *l) {
 	COMSTAT cs;
 	HANDLE hFile;
 	fd = getFileDesc(l, 1);
-	waitTimeOut = luaL_checkinteger(l, 2);
+	waitTimeOut = luaL_optinteger(l, 2, 0);
 	sleepTime = luaL_optinteger(l, 3, 500);
 	hFile = (HANDLE)_get_osfhandle(fd);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		RETURN_ERROR(l, last_error())
 	}
 	sleepTotalTime = 0;
-	while ((waitTimeOut < 0) || (sleepTotalTime < waitTimeOut)) {
+	for (;;) {
 		if (!ClearCommError(hFile, &errmask, &cs)) {
 			RETURN_ERROR(l, last_error())
 		}
 		if (cs.cbInQue > 0) {
 			RETURN_SUCCESS(l)
+		}
+		if ((waitTimeOut >= 0) && (sleepTotalTime >= waitTimeOut)) {
+			break;
 		}
 		Sleep(sleepTime);
 		sleepTotalTime += sleepTime;
