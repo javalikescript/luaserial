@@ -35,6 +35,33 @@ static int getFileDesc(lua_State *l, int arg) {
 	return fd;
 }
 
+static int getIntegerField(lua_State *l, int i, const char *k, int def) {
+  int v;
+  lua_getfield(l, i, k);
+  if (lua_isinteger(l, -1)) {
+    v = (int) lua_tointeger(l, -1);
+  } else {
+    v = def;
+  }
+  lua_pop(l, 1);
+  return v;
+}
+
+static int getBoolean(lua_State *l, int i, int def) {
+  if (lua_isboolean(l, i)) {
+    return lua_toboolean(l, i);
+  }
+  return def;
+}
+
+static int getBooleanField(lua_State *l, int i, const char *k, int def) {
+  int v;
+  lua_getfield(l, i, k);
+  v = getBoolean(l, -1, def);
+  lua_pop(l, 1);
+  return v;
+}
+
 #ifdef WIN32
 #include "luaserial_windows.c"
 #else
