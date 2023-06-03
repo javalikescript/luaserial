@@ -1,0 +1,3 @@
+[submodule "lua-compat"]
+	path = lua-compat
+	url = https://github.com/javalikescript/lua-compat.git

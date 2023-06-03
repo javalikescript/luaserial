@@ -1,25 +1,7 @@
-#include "luamod.h"
+#include "lua-compat/luamod.h"
 
 #if LUA_VERSION_NUM < 503
-#define luaL_checkinteger luaL_checknumber
-#define lua_isinteger lua_isnumber
-#define lua_tointeger lua_tonumber
-#endif
-
-#if LUA_VERSION_NUM < 502
-// From Lua 5.3 lauxlib.c
-LUALIB_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
-  luaL_checkstack(L, nup, "too many upvalues");
-  for (; l->name != NULL; l++) {  /* fill the table with given functions */
-    int i;
-    for (i = 0; i < nup; i++)  /* copy upvalues to the top */
-      lua_pushvalue(L, -nup);
-    lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
-    lua_setfield(L, -(nup + 2), l->name);
-  }
-  lua_pop(L, nup);  /* remove upvalues */
-}
-#define lua_rawlen lua_objlen
+#include "lua-compat/compat.h"
 #endif
 
 #if LUA_VERSION_NUM > 501
@@ -59,8 +41,6 @@ static int getFileDesc(lua_State *l, int arg) {
 
 #else
 
-#define LUA_FILEHANDLE		"FILE*"
-
 static int toLuaFile(lua_State *l) {
 	int fd;
 	const char* mode;
@@ -68,7 +48,7 @@ static int toLuaFile(lua_State *l) {
 	mode = luaL_optstring(l, 2, "r");
   FILE **pf = (FILE **)lua_newuserdata(l, sizeof(FILE *));
   *pf = fdopen(fd, mode);
-  luaL_getmetatable(l, LUA_FILEHANDLE);
+  luaL_getmetatable(l, "FILE*");
   lua_setmetatable(l, -2);
 	return 1;
 }
@@ -80,7 +60,7 @@ static int getFileDesc(lua_State *l, int arg) {
   if (lua_isinteger(l, arg)) {
 		fd = lua_tointeger(l, arg);
   } else {
-    f = *(FILE **)luaL_checkudata(l, arg, LUA_FILEHANDLE);
+    f = *(FILE **)luaL_checkudata(l, arg, "FILE*");
 		fd = fileno(f);
   }
 	return fd;
