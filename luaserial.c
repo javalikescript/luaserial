@@ -1,5 +1,29 @@
 #include "luamod.h"
 
+#if LUA_VERSION_NUM < 503
+#define luaL_checkinteger luaL_checknumber
+#define lua_isinteger lua_isnumber
+#define lua_tointeger lua_tonumber
+#endif
+
+#if LUA_VERSION_NUM < 502
+// From Lua 5.3 lauxlib.c
+LUALIB_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+  luaL_checkstack(L, nup, "too many upvalues");
+  for (; l->name != NULL; l++) {  /* fill the table with given functions */
+    int i;
+    for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+      lua_pushvalue(L, -nup);
+    lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
+    lua_setfield(L, -(nup + 2), l->name);
+  }
+  lua_pop(L, nup);  /* remove upvalues */
+}
+#define lua_rawlen lua_objlen
+#endif
+
+#if LUA_VERSION_NUM > 501
+
 static int luaFileNoClose(lua_State *l) {
 	luaL_Stream *p = (luaL_Stream *)luaL_checkudata(l, 1, LUA_FILEHANDLE);
   p->closef = &luaFileNoClose;
@@ -12,10 +36,8 @@ static int toLuaFile(lua_State *l) {
 	int fd;
 	const char* mode;
 	fd = luaL_checkinteger(l, 1);
-	//mode = luaL_checkstring(l, 2);
 	mode = luaL_optstring(l, 2, "r");
   luaL_Stream *p = (luaL_Stream *)lua_newuserdata(l, sizeof(luaL_Stream));
-  //p->closef = NULL;
   p->closef = &luaFileNoClose;
 	p->f = fdopen(fd, mode);
   luaL_setmetatable(l, LUA_FILEHANDLE);
@@ -34,6 +56,37 @@ static int getFileDesc(lua_State *l, int arg) {
 	}
 	return fd;
 }
+
+#else
+
+#define LUA_FILEHANDLE		"FILE*"
+
+static int toLuaFile(lua_State *l) {
+	int fd;
+	const char* mode;
+	fd = luaL_checkinteger(l, 1);
+	mode = luaL_optstring(l, 2, "r");
+  FILE **pf = (FILE **)lua_newuserdata(l, sizeof(FILE *));
+  *pf = fdopen(fd, mode);
+  luaL_getmetatable(l, LUA_FILEHANDLE);
+  lua_setmetatable(l, -2);
+	return 1;
+}
+
+static int getFileDesc(lua_State *l, int arg) {
+	int fd;
+	FILE *f;
+  trace("getFileDesc()\n");
+  if (lua_isinteger(l, arg)) {
+		fd = lua_tointeger(l, arg);
+  } else {
+    f = *(FILE **)luaL_checkudata(l, arg, LUA_FILEHANDLE);
+		fd = fileno(f);
+  }
+	return fd;
+}
+
+#endif
 
 static int getIntegerField(lua_State *l, int i, const char *k, int def) {
   int v;
@@ -87,7 +140,7 @@ LUALIB_API int luaopen_serial(lua_State *l) {
   luaL_setfuncs(l, reg, 0);
   lua_pushliteral(l, "Lua serial");
   lua_setfield(l, -2, "_NAME");
-  lua_pushliteral(l, "0.1");
+  lua_pushliteral(l, "0.2");
   lua_setfield(l, -2, "_VERSION");
   trace("luaopen_serial() done\n");
   return 1;
