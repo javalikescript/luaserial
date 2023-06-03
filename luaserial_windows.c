@@ -27,12 +27,12 @@ static int getSerial(lua_State *l) {
   fd = getFileDesc(l, 1);
   hFile = (HANDLE)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   memset(&pdcb, 0, sizeof(DCB));
   pdcb.DCBlength = sizeof(DCB);
   if (!GetCommState(hFile, &pdcb)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   switch(pdcb.StopBits) {
   case ONESTOPBIT:
@@ -63,10 +63,10 @@ static int getSerial(lua_State *l) {
     break;
   }
   lua_newtable(l);
-  SET_TABLE_KEY_INTEGER(l, "baudRate", pdcb.BaudRate)
-  SET_TABLE_KEY_INTEGER(l, "dataBits", pdcb.ByteSize)
-  SET_TABLE_KEY_INTEGER(l, "stopBits", stopBits)
-  SET_TABLE_KEY_INTEGER(l, "parity", parity)
+  SET_TABLE_KEY_INTEGER(l, "baudRate", pdcb.BaudRate);
+  SET_TABLE_KEY_INTEGER(l, "dataBits", pdcb.ByteSize);
+  SET_TABLE_KEY_INTEGER(l, "stopBits", stopBits);
+  SET_TABLE_KEY_INTEGER(l, "parity", parity);
   return 1;
 }
 
@@ -154,13 +154,13 @@ static int setSerial(lua_State *l) {
   }
   hFile = (HANDLE)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   memset(&pdcb, 0, sizeof(DCB));
   pdcb.DCBlength = sizeof(DCB);
   // retrieve current state in order to keep non modified fields
   if (!GetCommState(hFile, &pdcb)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   if (init) {
     if (clear) {
@@ -209,9 +209,9 @@ static int setSerial(lua_State *l) {
     }
   }
   if (!SetCommState(hFile, &pdcb)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int setTimeout(lua_State *l) {
@@ -225,7 +225,7 @@ static int setTimeout(lua_State *l) {
   writeTimeOut = luaL_checkinteger(l, 3);
   hFile = (HANDLE)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   memset(&t, 0, sizeof(COMMTIMEOUTS));
   /*if (!GetCommTimeouts(hFile, &t)) {
@@ -253,9 +253,9 @@ static int setTimeout(lua_State *l) {
   t.WriteTotalTimeoutMultiplier = 0;
   t.WriteTotalTimeoutConstant = writeTimeOut;
   if (!SetCommTimeouts(hFile, &t)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int flush(lua_State *l) {
@@ -264,15 +264,15 @@ static int flush(lua_State *l) {
   fd = getFileDesc(l, 1);
   hFile = (HANDLE)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   if (!FlushFileBuffers(hFile)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   if (!PurgeComm(hFile, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int waitDataAvailable(lua_State *l) {
@@ -288,15 +288,15 @@ static int waitDataAvailable(lua_State *l) {
   sleepTime = luaL_optinteger(l, 3, 500);
   hFile = (HANDLE)_get_osfhandle(fd);
   if (hFile == INVALID_HANDLE_VALUE) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   sleepTotalTime = 0;
   for (;;) {
     if (!ClearCommError(hFile, &errmask, &cs)) {
-      RETURN_ERROR(l, last_error())
+      RETURN_ERROR(l, last_error());
     }
     if (cs.cbInQue > 0) {
-      RETURN_SUCCESS(l)
+      RETURN_SUCCESS(l);
     }
     if ((waitTimeOut >= 0) && (sleepTotalTime >= waitTimeOut)) {
       break;
@@ -304,7 +304,7 @@ static int waitDataAvailable(lua_State *l) {
     Sleep(sleepTime);
     sleepTotalTime += sleepTime;
   }
-  RETURN_ERROR(l, "timeout")
+  RETURN_ERROR(l, "timeout");
 }
 
 static int available(lua_State *l) {
@@ -315,7 +315,7 @@ static int available(lua_State *l) {
   fd = getFileDesc(l, 1);
   hFile = (HANDLE)_get_osfhandle(fd);
   if (!ClearCommError(hFile, &errmask, &cs)) {
-    RETURN_ERROR(l, last_error())
+    RETURN_ERROR(l, last_error());
   }
   lua_pushinteger(l, cs.cbInQue);
   return 1;

@@ -15,7 +15,7 @@ static int getSerial(lua_State *l) {
   struct termios term;
   fd = getFileDesc(l, 1);
   if (tcgetattr(fd, &term) < 0) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
   speed_t speed = cfgetispeed(&term);
   switch(speed) {
@@ -83,10 +83,10 @@ static int getSerial(lua_State *l) {
     }
   }
   lua_newtable(l);
-  SET_TABLE_KEY_INTEGER(l, "baudRate", baudRate)
-  SET_TABLE_KEY_INTEGER(l, "dataBits", dataBits)
-  SET_TABLE_KEY_INTEGER(l, "stopBits", stopBits)
-  SET_TABLE_KEY_INTEGER(l, "parity", parity)
+  SET_TABLE_KEY_INTEGER(l, "baudRate", baudRate);
+  SET_TABLE_KEY_INTEGER(l, "dataBits", dataBits);
+  SET_TABLE_KEY_INTEGER(l, "stopBits", stopBits);
+  SET_TABLE_KEY_INTEGER(l, "parity", parity);
   return 1;
 }
 
@@ -181,7 +181,7 @@ static int setSerial(lua_State *l) {
     clear = getBoolean(l, 8, 0);
   }
   if (tcgetattr(fd, &term) < 0) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
   if (init) {
     if (clear) {
@@ -260,13 +260,13 @@ static int setSerial(lua_State *l) {
   }
   // returns success if any of the requested changes could be successfully carried out.
   if (tcsetattr(fd, TCSANOW, &term) < 0) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int setTimeout(lua_State *l) {
-  RETURN_ERROR(l, "Unsupported operation")
+  RETURN_ERROR(l, "Unsupported operation");
 }
 
 static int flush(lua_State *l) {
@@ -274,9 +274,9 @@ static int flush(lua_State *l) {
   fd = getFileDesc(l, 1);
   // could be TCIFLUSH, TCOFLUSH or TCIOFLUSH
   if (tcflush(fd, TCIOFLUSH) == -1) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int waitDataAvailable(lua_State *l) {
@@ -300,12 +300,12 @@ static int waitDataAvailable(lua_State *l) {
   }
   count = select(fd + 1, &set, NULL, NULL, ptv);
   if (count < 0) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
   if (count == 0) {
-    RETURN_ERROR(l, "timeout")
+    RETURN_ERROR(l, "timeout");
   }
-  RETURN_SUCCESS(l)
+  RETURN_SUCCESS(l);
 }
 
 static int available(lua_State *l) {
@@ -320,7 +320,7 @@ static int available(lua_State *l) {
   tv.tv_sec = 0;
   select(fd + 1, &set, NULL, NULL, &tv);
   if (ioctl(fd, FIONREAD, &count) == -1) {
-    RETURN_ERROR(l, strerror(errno))
+    RETURN_ERROR(l, strerror(errno));
   }
   lua_pushinteger(l, count);
   return 1;
