@@ -40,7 +40,7 @@ TARGET_linux = $(LIBNAME).so
 
 TARGET = $(TARGET_$(PLAT))
 
-SOURCES = luaserial.c
+SOURCES = luaserial.c lua-compat/luamod.h lua-compat/compat.h
 
 OBJS = luaserial.o
 
