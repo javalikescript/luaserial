@@ -1,72 +1,52 @@
-#include "lua-compat/luamod.h"
-
 #if LUA_VERSION_NUM < 503
 #include "lua-compat/compat.h"
 #endif
 
+#include "lua-compat/luamod.h"
+#include "lua-compat/file.h"
+
 #if LUA_VERSION_NUM > 501
 
+// from liolib.c
 static int luaFileNoClose(lua_State *l) {
 	luaL_Stream *p = (luaL_Stream *)luaL_checkudata(l, 1, LUA_FILEHANDLE);
   p->closef = &luaFileNoClose;
   lua_pushnil(l);
-  lua_pushliteral(l, "cannot close standard file");
+  lua_pushliteral(l, "cannot close fd file");
   return 2;
 }
-
-static int toLuaFile(lua_State *l) {
-	int fd;
-	const char* mode;
-	fd = luaL_checkinteger(l, 1);
-	mode = luaL_optstring(l, 2, "r");
-  luaL_Stream *p = (luaL_Stream *)lua_newuserdata(l, sizeof(luaL_Stream));
-  p->closef = &luaFileNoClose;
-	p->f = fdopen(fd, mode);
-  luaL_setmetatable(l, LUA_FILEHANDLE);
-	return 1;
-}
-
-static int getFileDesc(lua_State *l, int arg) {
-	int fd;
-	luaL_Stream *pLuaStream;
-  trace("getFileDesc()\n");
-	pLuaStream = (luaL_Stream *)luaL_testudata(l, arg, LUA_FILEHANDLE);
-	if (pLuaStream != NULL) {
-		fd = fileno(pLuaStream->f);
-	} else {
-		fd = luaL_checkinteger(l, arg);
-	}
-	return fd;
-}
+#define INIT_UDATA_FILE(_UDATA) (((luaL_Stream *)_UDATA)->closef = &luaFileNoClose)
 
 #else
 
+#define INIT_UDATA_FILE(_UDATA)
+
+#endif
+
 static int toLuaFile(lua_State *l) {
-	int fd;
-	const char* mode;
-	fd = luaL_checkinteger(l, 1);
-	mode = luaL_optstring(l, 2, "r");
-  FILE **pf = (FILE **)lua_newuserdata(l, sizeof(FILE *));
-  *pf = fdopen(fd, mode);
-  luaL_getmetatable(l, "FILE*");
+	int fd = luaL_checkinteger(l, 1);
+	const char* mode = luaL_optstring(l, 2, "r");
+  FILE_UDATA_TYPE* pFileUData = (FILE_UDATA_TYPE*)lua_newuserdata(l, sizeof(FILE_UDATA_TYPE));
+  INIT_UDATA_FILE(pFileUData);
+  REF_UDATA_FILE(pFileUData) = fdopen(fd, mode);
+  luaL_getmetatable(l, FILE_UDATA_NAME);
   lua_setmetatable(l, -2);
 	return 1;
 }
 
 static int getFileDesc(lua_State *l, int arg) {
-	int fd;
-	FILE *f;
-  trace("getFileDesc()\n");
-  if (lua_isinteger(l, arg)) {
-		fd = lua_tointeger(l, arg);
-  } else {
-    f = *(FILE **)luaL_checkudata(l, arg, "FILE*");
-		fd = fileno(f);
+  void *pFileUData = luaL_testudata(l, arg, FILE_UDATA_NAME);
+  if (pFileUData != NULL) {
+    return fileno(REF_UDATA_FILE(pFileUData));
   }
-	return fd;
+  return luaL_checkinteger(l, arg);
 }
 
-#endif
+static int toFileNo(lua_State *l) {
+  int fd = getFileDesc(l, 1);
+  lua_pushinteger(l, fd);
+	return 1;
+}
 
 static int getIntegerField(lua_State *l, int i, const char *k, int def) {
   int v;
@@ -114,6 +94,7 @@ LUALIB_API int luaopen_serial(lua_State *l) {
     { "waitDataAvailable", waitDataAvailable },
     { "available", available },
     { "toLuaFile", toLuaFile },
+    { "toFileNo", toFileNo },
     { NULL, NULL }
   };
   lua_newtable(l);
